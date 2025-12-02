@@ -1,52 +1,65 @@
 import { useState } from 'react';
-import type { Project, Task } from '@/types';
+import { useParams, useNavigate } from 'react-router-dom';
+import type { Task } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AddTaskModal } from './AddTaskModal';
-import { 
-  ArrowLeft, 
-  Calendar, 
-  Users, 
- 
+import {
+  ArrowLeft,
+  Calendar,
+  Users,
   CheckCircle2,
   Circle,
   Plus,
   Edit3,
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import { getStatusColor, getPriorityColor, formatDate, isOverdue } from '@/utils/calculations';
+import { useProject, useDeleteProject } from '@/hooks/useProjects';
+import { useDeleteTask } from '@/hooks/useTasks';
+import { useToggleSubtask, useCreateSubtask } from '@/hooks/useSubtasks';
 
-interface ProjectDetailProps {
-  project: Project;
-  onBack: () => void;
-  onEditProject?: () => void;
-  onDeleteProject?: () => void;
-  onTaskCreated?: (task: Task) => void;
-  onEditTask?: (task: Task) => void;
-  onDeleteTask?: (taskId: string) => void;
-  onToggleSubtask?: (taskId: string, subtaskId: string) => void;
-  onAddSubtask?: (taskId: string) => void;
-}
-
-export function ProjectDetail({
-  project,
-  onBack,
-  onEditProject,
-  onDeleteProject,
-  onTaskCreated,
-  onEditTask,
-  onDeleteTask,
-  onToggleSubtask,
-  onAddSubtask
-}: ProjectDetailProps) {
+export function ProjectDetail() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data: project, isLoading, error } = useProject(id);
+  const deleteProject = useDeleteProject();
+  const deleteTask = useDeleteTask();
+  const toggleSubtask = useToggleSubtask();
+  const createSubtask = useCreateSubtask();
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
-  
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
+      </div>
+    );
+  }
+
+  if (error || !project) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-red-900 mb-2">Failed to load project</h3>
+              <p className="text-red-600 mb-4">{error ? (error as Error).message : 'Project not found'}</p>
+              <Button onClick={() => navigate('/')}>Back to Dashboard</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const completedTasks = project.tasks.filter(task => task.status === 'done').length;
   const totalTasks = project.tasks.length;
-  
+
   const totalSubtasks = project.tasks.reduce((acc, task) => acc + task.subtasks.length, 0);
   const completedSubtasks = project.tasks.reduce(
     (acc, task) => acc + task.subtasks.filter(subtask => subtask.status === 'completed').length,
@@ -61,18 +74,48 @@ export function ProjectDetail({
     return Math.round((completed / task.subtasks.length) * 100);
   };
 
-  const handleCreateTask = async (taskData: Omit<Task, 'id' | 'subtasks'> & { projectId: string }) => {
-    try {
-      // Import tasksApi here to avoid circular dependencies
-      const { tasksApi } = await import('@/services/api');
-      const newTask = await tasksApi.create(taskData);
-      
-      if (onTaskCreated) {
-        onTaskCreated(newTask);
+  const handleDeleteProject = async () => {
+    if (window.confirm('Are you sure you want to delete this project?')) {
+      try {
+        await deleteProject.mutateAsync(project.id);
+        navigate('/');
+      } catch (error) {
+        console.error('Error deleting project:', error);
       }
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (window.confirm('Are you sure you want to delete this task?')) {
+      try {
+        await deleteTask.mutateAsync({ taskId, projectId: project.id });
+      } catch (error) {
+        console.error('Error deleting task:', error);
+      }
+    }
+  };
+
+  const handleToggleSubtask = async (_taskId: string, subtaskId: string) => {
+    try {
+      await toggleSubtask.mutateAsync({ id: subtaskId, projectId: project.id });
     } catch (error) {
-      console.error('Error creating task:', error);
-      throw error; // Let the modal handle the error display
+      console.error('Error toggling subtask:', error);
+    }
+  };
+
+  const handleAddSubtask = async (taskId: string) => {
+    const subtaskName = window.prompt('Enter subtask name:');
+    if (!subtaskName) return;
+
+    try {
+      await createSubtask.mutateAsync({
+        taskId,
+        projectId: project.id,
+        name: subtaskName,
+        status: 'pending'
+      });
+    } catch (error) {
+      console.error('Error adding subtask:', error);
     }
   };
 
@@ -83,17 +126,17 @@ export function ProjectDetail({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={onBack}>
+              <Button variant="ghost" onClick={() => navigate('/')}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Dashboard
               </Button>
             </div>
             <div className="flex items-center space-x-3">
-              <Button variant="outline" onClick={onEditProject}>
+              <Button variant="outline" onClick={() => console.log('Edit project')}>
                 <Edit3 className="h-4 w-4 mr-2" />
                 Edit Project
               </Button>
-              <Button variant="destructive" onClick={onDeleteProject}>
+              <Button variant="destructive" onClick={handleDeleteProject}>
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete
               </Button>
@@ -287,7 +330,7 @@ export function ProjectDetail({
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => onAddSubtask?.(task.id)}
+                              onClick={() => handleAddSubtask(task.id)}
                             >
                               <Plus className="h-3 w-3 mr-1" />
                               Add Subtask
@@ -306,7 +349,7 @@ export function ProjectDetail({
                                   className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
                                 >
                                   <button
-                                    onClick={() => onToggleSubtask?.(task.id, subtask.id)}
+                                    onClick={() => handleToggleSubtask(task.id, subtask.id)}
                                     className="flex-shrink-0"
                                   >
                                     {subtask.status === 'completed' ? (
@@ -343,7 +386,7 @@ export function ProjectDetail({
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => onEditTask?.(task)}
+                            onClick={() => console.log('Edit task:', task)}
                           >
                             <Edit3 className="h-3 w-3 mr-1" />
                             Edit Task
@@ -351,7 +394,7 @@ export function ProjectDetail({
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => onDeleteTask?.(task.id)}
+                            onClick={() => handleDeleteTask(task.id)}
                           >
                             <Trash2 className="h-3 w-3 mr-1" />
                             Delete
@@ -371,7 +414,6 @@ export function ProjectDetail({
           open={showAddTaskModal}
           onOpenChange={setShowAddTaskModal}
           projectId={project.id}
-          onSubmit={handleCreateTask}
         />
       </div>
     </div>

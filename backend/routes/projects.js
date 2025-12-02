@@ -1,36 +1,34 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
-const { db, calculateProjectProgress } = require('../database');
+const { db, dbRun, dbGet, dbAll, calculateProjectProgress } = require('../database');
 const router = express.Router();
 
 // Get all projects with their tasks and subtasks
-router.get('/', (req, res) => {
-  const query = `
-    SELECT 
-      p.*,
-      t.id as task_id,
-      t.name as task_name,
-      t.description as task_description,
-      t.status as task_status,
-      t.priority as task_priority,
-      t.assignee as task_assignee,
-      t.due_date as task_due_date,
-      t.estimated_hours as task_estimated_hours,
-      s.id as subtask_id,
-      s.name as subtask_name,
-      s.status as subtask_status,
-      s.assignee as subtask_assignee,
-      s.notes as subtask_notes
-    FROM projects p
-    LEFT JOIN tasks t ON p.id = t.project_id
-    LEFT JOIN subtasks s ON t.id = s.task_id
-    ORDER BY p.created_at DESC, t.created_at ASC, s.created_at ASC
-  `;
+router.get('/', async (req, res) => {
+  try {
+    const query = `
+      SELECT
+        p.*,
+        t.id as task_id,
+        t.name as task_name,
+        t.description as task_description,
+        t.status as task_status,
+        t.priority as task_priority,
+        t.assignee as task_assignee,
+        t.due_date as task_due_date,
+        t.estimated_hours as task_estimated_hours,
+        s.id as subtask_id,
+        s.name as subtask_name,
+        s.status as subtask_status,
+        s.assignee as subtask_assignee,
+        s.notes as subtask_notes
+      FROM projects p
+      LEFT JOIN tasks t ON p.id = t.project_id
+      LEFT JOIN subtasks s ON t.id = s.task_id
+      ORDER BY p.created_at DESC, t.created_at ASC, s.created_at ASC
+    `;
 
-  db.all(query, [], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
+    const rows = await dbAll(query, []);
 
     // Group the results into nested structure
     const projectsMap = new Map();
@@ -91,7 +89,9 @@ router.get('/', (req, res) => {
     }));
 
     res.json(projects);
-  });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Get single project by ID

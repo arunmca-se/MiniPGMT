@@ -1,13 +1,20 @@
-# Appzcart Project Management Tool
+# MiniPGMT - Modern Project Management Tool
 
-A full-stack project management application built with React, TypeScript, Tailwind CSS, and SQLite.
+A full-stack project management application built with React, TypeScript, and Node.js, featuring intelligent caching, URL-based navigation, and a clean architecture following industry best practices.
+
+## 📚 Documentation
+
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Comprehensive architecture documentation, design decisions, and patterns
+- **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** - Developer quick reference guide with common tasks and patterns
 
 ## ✨ Features
 
 ### 🎯 Core Functionality
-- **Project Dashboard** - Overview of all projects with stats and filtering
-- **Project Detail View** - Hierarchical task and subtask management
-- **Real-time Progress Tracking** - Automatic progress calculation based on subtask completion
+- **Smart Dashboard** - Overview of all projects with real-time stats and advanced filtering
+- **Project Detail View** - Hierarchical task and subtask management with drag-and-drop support
+- **Intelligent Caching** - React Query automatically caches and synchronizes data
+- **URL-Based Navigation** - Bookmarkable URLs with browser back/forward support
+- **Real-time Progress** - Automatic progress calculation based on subtask completion
 - **Status Management** - Color-coded status badges for projects, tasks, and subtasks
 - **Search & Filter** - Filter projects by status and search by name/description
 - **HTML Export** - Generate downloadable project reports with embedded styling
@@ -27,15 +34,33 @@ Projects
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **React 19** + **TypeScript** - Modern React with full type safety
-- **Tailwind CSS** - Utility-first styling
-- **shadcn/ui** - Professional component library
-- **Lucide React** - Beautiful icons
+- **React 19.2.0** - Modern React with concurrent features
+- **TypeScript 5.9.3** - Full type safety with strict mode
+- **React Router 7.10.0** - URL-based navigation
+- **TanStack Query 5.90.11** - Server state management & intelligent caching
+- **Tailwind CSS 4.1.17** - Utility-first styling
+- **Radix UI** - Accessible component primitives
+- **Vite 7.2.4** - Lightning-fast build tool
+- **Lucide React** - Beautiful icon library
 
 ### Backend
-- **Node.js** + **Express** - RESTful API server
-- **SQLite** - Lightweight, file-based database
-- **CORS** enabled for cross-origin requests
+- **Node.js + Express 5.2.1** - RESTful API server with async/await
+- **SQLite 5.1.7** - Lightweight, file-based database
+- **CORS 2.8.5** - Cross-origin resource sharing
+
+## 🎯 Architecture Highlights
+
+### Modern State Management
+- **No prop drilling** - Components use React Query hooks directly
+- **Automatic caching** - 5-minute intelligent cache with background refetching
+- **Optimistic updates** - Instant UI feedback for better UX
+- **93% code reduction** - App.tsx went from 183 lines to just 12 lines!
+
+### Clean Backend
+- **Async/await** - No callback hell, modern promise-based code
+- **Promisified SQLite** - Clean database queries with try-catch error handling
+- **RESTful API** - Well-structured endpoints following REST principles
+- **Cascading deletes** - Database-level foreign key constraints
 
 ## 🚀 Quick Start
 

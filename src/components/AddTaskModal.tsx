@@ -4,16 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarIcon, Plus } from 'lucide-react';
-import type { Task, TaskStatus, Priority } from '@/types';
+import type { TaskStatus, Priority } from '@/types';
+import { useCreateTask } from '@/hooks/useTasks';
 
 interface AddTaskModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
-  onSubmit: (taskData: Omit<Task, 'id' | 'subtasks'> & { projectId: string }) => Promise<void>;
 }
 
-export function AddTaskModal({ open, onOpenChange, projectId, onSubmit }: AddTaskModalProps) {
+export function AddTaskModal({ open, onOpenChange, projectId }: AddTaskModalProps) {
+  const createTask = useCreateTask();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -61,8 +62,8 @@ export function AddTaskModal({ open, onOpenChange, projectId, onSubmit }: AddTas
         estimatedHours: formData.estimatedHours ? Number(formData.estimatedHours) : undefined
       };
 
-      await onSubmit(taskData);
-      
+      await createTask.mutateAsync(taskData);
+
       // Reset form and close modal
       setFormData({
         name: '',

@@ -5,15 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { CalendarIcon, Plus, X } from 'lucide-react';
-import type { Project, ProjectStatus, Priority } from '@/types';
+import type { ProjectStatus, Priority } from '@/types';
+import { useCreateProject } from '@/hooks/useProjects';
 
 interface AddProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (projectData: Omit<Project, 'id' | 'progress' | 'tasks'>) => Promise<void>;
 }
 
-export function AddProjectModal({ open, onOpenChange, onSubmit }: AddProjectModalProps) {
+export function AddProjectModal({ open, onOpenChange }: AddProjectModalProps) {
+  const createProject = useCreateProject();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -56,15 +57,15 @@ export function AddProjectModal({ open, onOpenChange, onSubmit }: AddProjectModa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await onSubmit(formData);
-      
+      await createProject.mutateAsync(formData);
+
       // Reset form and close modal
       setFormData({
         name: '',

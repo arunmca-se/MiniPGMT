@@ -12,6 +12,34 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
+// Promisify database operations
+const dbRun = (query, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.run(query, params, function(err) {
+      if (err) reject(err);
+      else resolve({ lastID: this.lastID, changes: this.changes });
+    });
+  });
+};
+
+const dbGet = (query, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.get(query, params, (err, row) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+};
+
+const dbAll = (query, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.all(query, params, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows);
+    });
+  });
+};
+
 // Create tables
 const initDatabase = () => {
   // Database metadata table to track initialization
@@ -77,32 +105,29 @@ const initDatabase = () => {
 };
 
 // Calculate project progress based on subtasks
-const calculateProjectProgress = (projectId, callback) => {
+const calculateProjectProgress = async (projectId) => {
   const query = `
-    SELECT 
+    SELECT
       COUNT(*) as total_subtasks,
       COUNT(CASE WHEN s.status = 'completed' THEN 1 END) as completed_subtasks
     FROM tasks t
     LEFT JOIN subtasks s ON t.id = s.task_id
     WHERE t.project_id = ?
   `;
-  
-  db.get(query, [projectId], (err, row) => {
-    if (err) {
-      return callback(err);
-    }
-    
-    const progress = row.total_subtasks > 0 
-      ? Math.round((row.completed_subtasks / row.total_subtasks) * 100)
-      : 0;
-    
-    // Update project progress
-    db.run(
-      'UPDATE projects SET progress = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [progress, projectId],
-      callback
-    );
-  });
+
+  const row = await dbGet(query, [projectId]);
+
+  const progress = row.total_subtasks > 0
+    ? Math.round((row.completed_subtasks / row.total_subtasks) * 100)
+    : 0;
+
+  // Update project progress
+  await dbRun(
+    'UPDATE projects SET progress = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+    [progress, projectId]
+  );
+
+  return progress;
 };
 
 // Seed database with sample data
@@ -344,11 +369,9 @@ const seedDatabase = () => {
     insertSubtask.finalize();
 
     // Calculate initial progress for all projects
-    projects.forEach(project => {
-      calculateProjectProgress(project.id, (err) => {
-        if (err) console.error(`Error calculating progress for ${project.id}:`, err);
-      });
-    });
+    Promise.all(
+      projects.map(project => calculateProjectProgress(project.id))
+    ).catch(err => console.error('Error calculating progress:', err));
 
     // Mark database as seeded
     db.run(
@@ -367,6 +390,9 @@ const seedDatabase = () => {
 
 module.exports = {
   db,
+  dbRun,
+  dbGet,
+  dbAll,
   initDatabase,
   seedDatabase,
   calculateProjectProgress
