@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build outputs
+dist/
+build/
+target/
+*.jar
+*.war
+*.ear
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+postgres_data/
+redis_data/
+
+# Uploads
+uploads/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# Java
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~

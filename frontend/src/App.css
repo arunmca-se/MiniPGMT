@@ -1,0 +1,7 @@
+/* App-specific styles */
+/* Most styling is done via Tailwind utility classes and design tokens */
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}

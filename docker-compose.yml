@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: minipgmt-postgres
+    environment:
+      POSTGRES_DB: minipgmt
+      POSTGRES_USER: minipgmt_user
+      POSTGRES_PASSWORD: minipgmt_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - minipgmt-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U minipgmt_user -d minipgmt"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: minipgmt-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - minipgmt-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  minipgmt-network:
+    driver: bridge
